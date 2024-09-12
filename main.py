@@ -1,36 +1,81 @@
 #!/usr/bin/env pybricks-micropython
-#import packages
 from pybricks.hubs import EV3Brick
-from pybricks.ev3devices import Motor
-from pybricks.parameters import Port, Direction
+from pybricks.ev3devices import Motor, ColorSensor, UltrasonicSensor
+from pybricks.parameters import Port, Color, Direction
 from pybricks.robotics import DriveBase
+from pybricks.tools import wait
 
-# Initialize the EV3 Brick & everything else.
-ev3 = EV3Brick()
+def Follow_line():
+    while True:
+        ColorData = Colorsensor.reflection()
+        print(Threshhold2-Colorsensor.reflection()+5)
+        sign = -1
+        if Threshhold2-ColorData+5 < 0:
+            for i in range(0,180,5):
+                for j in range(i):
+                    DBase.turn(sign)
+                    print(Threshhold2-Colorsensor.reflection()+5)
+                    if Threshhold2-Colorsensor.reflection()+5 > 0:
+                        DBase.turn(3*sign)
+                        break
+                if Threshhold2-Colorsensor.reflection()+5 > 0:
+                    break
+                if sign >=0:
+                    sign=-1
+                else:
+                    sign=1
+                if i == 175:
+                    DBase.turn(0,-80)
+        if ColorData-Threshhold1 < 0:
+            break
 
-# Initialize motors (left motor set to run counterclockwise)
-left_motor = Motor(Port.B)
-right_motor = Motor(Port.A)
-gripper_motor = Motor(Port.D)  # Make sure to use a different port for the arm motor
+        DBase.drive(Dspeed,0)
+        wait(10)
+    return
+def Find_line():
+    DBase.drive(Dspeed,0)
+    while True:
+        if Threshhold2-Colorsensor.reflection()+5 >0:
+            break
+    DBase.stop()
+    return
 
-# Initialize the drive base
-robot = DriveBase(left_motor, right_motor, wheel_diameter=55.5, axle_track=104)
+Motor_R = Motor(Port.A)
+Motor_L = Motor(Port.D)
+EV3 = EV3Brick()
+Colorsensor = ColorSensor(Port.S1)
 
-# Go forward and backwards for one meter.
-robot.straight(1000)
-ev3.speaker.beep()
 
-robot.straight(-1000)
-ev3.speaker.beep()
 
-# Turn clockwise by 360 degrees and back again.
-robot.turn(360)
-ev3.speaker.beep()
+Black = 5
+White = 62
+Grey = 37
+Threshhold1 = (Black+Grey)/2
+Threshhold2 = (Grey+White)/2
+Dspeed = -150
+DBase=DriveBase(Motor_R, Motor_L, wheel_diameter=70, axle_track=195)
 
-robot.turn(-360)
-ev3.speaker.beep()
+# første sektion af banen (Brudt streg)
+Follow_line()
 
-# Operate the gripper motor
-gripper_motor.run_target(75, 300)  # Adjust speed and angle as necessary
-gripper_motor.run_target(75, -300)
-ev3.speaker.beep()  # Beep to confirm completion
+
+DBase.turn(-30)
+Find_line()
+wait(100)
+# anden sektion af banen (Brudt streg)
+Follow_line()
+
+DBase.turn(30)
+Find_line()
+wait(100)
+
+# følg banen hen til flasken (3 sektion curve)
+Follow_line()
+
+
+    
+
+
+
+
+
