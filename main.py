@@ -11,7 +11,7 @@ Motor_R = Motor(Port.A)
 Motor_L = Motor(Port.D)
 EV3 = EV3Brick()
 Colorsensor = ColorSensor(Port.S1)
-Gyrosensor = GyroSensor(Port. S2)
+Gyrosensor = GyroSensor(Port. S4)
 
 
 
@@ -40,8 +40,8 @@ def follow_line(sign=1):
     Input defines which edge of the line to follow, where 1 (Default) is the right side and -1 is left side
     Returns void
     """
-    if abs(sign) == 1:
-        raise Exception(f"follow_line got to big input value: '{sign}', limit it to '1' or '-1'")
+   # if abs(sign) == 1:
+    #    raise Exception(f"follow_line got to big input value: '{sign}', limit it to '1' or '-1'")
     
     local_turn_rate = GENERAL_TURN
     while True:
@@ -94,4 +94,3 @@ while Colorsensor.reflection() > 50: # Andet sving
     DBase.drive(Dspeed, 0)
 follow_line(-1)
 wait(300)
-DBase.
