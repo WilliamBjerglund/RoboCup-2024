@@ -17,7 +17,7 @@ Gyrosensor = GyroSensor(Port. S4)
 
 Dspeed = -100
 GENERAL_TURN = 15
-GYRO_THRESHOLD = 20
+GYRO_THRESHOLD = 30
 
 DBase=DriveBase(Motor_R, Motor_L, wheel_diameter=70, axle_track=195)
 
@@ -48,9 +48,9 @@ def follow_line(sign=1):
         # Get new sensor data
         current_val = Colorsensor.reflection()
         gyro_angle = Gyrosensor.angle()
-        
         # Determine if black line has been reached, and thus next stage
         if current_val < 30:
+            Gyrosensor.reset_angle(0)
             DBase.stop()
             break
         
@@ -73,7 +73,8 @@ def follow_line(sign=1):
             DBase.drive(Dspeed, -sign * (local_turn_rate + local_error))
             
         # Debug
-        print(current_val)
+        #print(current_val)
+        print(gyro_angle)
     return
 
 
