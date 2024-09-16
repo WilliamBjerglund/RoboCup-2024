@@ -15,7 +15,7 @@ Colorsensor = ColorSensor(Port.S1)
 
 
 Dspeed = -200
-GENERAL_TURN = 25
+GENERAL_TURN = 20
 
 DBase=DriveBase(Motor_R, Motor_L, wheel_diameter=70, axle_track=195)
 
@@ -31,13 +31,25 @@ def calibrate():
 def follow_line():
     while True:
         current_val = Colorsensor.reflection()
+        if target_val > current_val:
+            local_error = (target_val - current_val)/2
+        else:
+            local_error = (current_val - target_val)/2
+            
         if current_val < target_val:
-            DBase.drive(Dspeed, GENERAL_TURN)
+            DBase.drive(Dspeed, direction * GENERAL_TURN+local_error)
         if current_val > target_val:
-            DBase.drive(Dspeed, -GENERAL_TURN)
+            DBase.drive(Dspeed, -(direction * GENERAL_TURN+local_error))
         print(current_val) #debug
+        if current_val < 15:
+            break
+
 
 
     
 target_val = calibrate()
 follow_line()
+while Colorsensor.reflection() > target_val:
+    DBase.drive(Dspeed, 30)
+follow_line()
+
