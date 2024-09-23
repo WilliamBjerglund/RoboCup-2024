@@ -7,6 +7,8 @@ from pybricks.tools import wait, StopWatch, DataLog
 from pybricks.robotics import DriveBase
 from pybricks.media.ev3dev import SoundFile, ImageFile
 
+import datetime
+
 # Initiation of motors and sensors
 Motor_R = Motor(Port.B)
 Motor_L = Motor(Port.C)
@@ -19,7 +21,10 @@ Ucensor = UltrasonicSensor(Port.S3)
 DRIVE_SPEED = -150
 GENERAL_TURN = 20
 GYRO_THRESHOLD = 20
+GYRO_OFFSET_FACTOR = 0.0005
 gyro_offset = 0
+robot_body_angle = 0
+timestamp = datetime.datetime.now()
 
 # Initiation of functional classes
 EV3 = EV3Brick()
@@ -65,130 +70,172 @@ def calibrate():
         gyro_offset = gyro_sum / GYRO_CALIBRATION_LOOP_COUNT
     return target_val
     
-def follow_line(sign=1, turn_direction='straight'):
+def get_angle():
+    """
+    Very experimental, if it doesnt work, jsut kill it 
+    """
+    global gyro_offset, robot_body_angle, timestamp
+    timespan = timestamp - datetime.datetime.now()
+    timestamp = datetime.datetime.now() 
+    gyro_sensor_value = Gyrosensor.speed()
+    gyro_offset *= (1 - GYRO_OFFSET_FACTOR)
+    gyro_offset += GYRO_OFFSET_FACTOR * gyro_sensor_value
+    robot_body_rate = gyro_sensor_value - gyro_offset
+    robot_body_angle += robot_body_rate * timespan
+    return robot_body_angle
+
+def follow_line(sign=1):
     """ 
-    Follows line edge
+    Follows the given or default line edge
     Input defines which edge of the line to follow, where 1 (Default) is the right side and -1 is left side
     Returns void
     """
-   # if abs(sign) == 1:
-    #    raise Exception(f"follow_line got to big input value: '{sign}', limit it to '1' or '-1'")
+    # Sanity check to not give wildly to large numbers and ensure good code
+    if abs(sign) != 1:
+        raise Exception("follow_line got to big input value: " + str(sign) + ", limit is between '1' or '-1'")
     
-    speed_multiplier = 1.15
-    local_turn_rate = 45
-    local_drive_speed = DRIVE_SPEED
+
+    correction_counter = 0
+    correction_counter_max = 1000
+    correction_multiplier = 3
     while True:
         # Get new sensor data
         current_val = Colorsensor.reflection()
-        gyro_angle = Gyrosensor.angle()
+
         # Determine if black line has been reached, and thus next stage
         if current_val < 30:
-            #Gyrosensor.reset_angle(0)
             DBase.stop()
             break
         
-        # Determine if in a turn and increase turn rate to drive faster without failing
-        if abs(gyro_angle) > GYRO_THRESHOLD:
-            #print("It hit me")
-            #local_turn_rate = 45
-            local_drive_speed *= speed_multiplier
+        # correction counter used to drive faster in turn, currently it is effectively not limited, probably should have a limit, but where?
+        if current_val < target_val:
+            if correction_counter < correction_counter_max:
+                correction_counter += 1
         else:
-            #local_turn_rate = GENERAL_TURN
-            local_drive_speed = DRIVE_SPEED
-            
-        # Determine the amount of correction to stay on path
+            correction_counter = 0
+
+        # Determine the amount of correction to stay on path, (probably doesn't do much tbh)
         if target_val > current_val:
             local_error = (target_val - current_val)/2
         else:
             local_error = (current_val - target_val)/2
-            
+
+        # verify if this is not equivlant to above   
+        #local_error = abs(target_val - current_val)/2
+
         # Apply correction in drive module and which edge of the line to follow
+        turn_rate = GENERAL_TURN + local_error + correction_counter * correction_multiplier
         if current_val < target_val:
-            DBase.drive(DRIVE_SPEED, -sign * (GENERAL_TURN + local_error)) # right
-        if current_val > target_val:
-            DBase.drive(DRIVE_SPEED, sign * (GENERAL_TURN + local_error)) # left
-    Gyrosensor.reset_angle(0)
-            
-        # Debug
-        #print(current_val)
-        #print(gyro_angle)
+            DBase.drive(DRIVE_SPEED, -sign * turn_rate) # right
+        else:
+            DBase.drive(DRIVE_SPEED, sign * turn_rate) # left
+
+    # is it necesarry tho?
+    Gyrosensor.reset_angle(0)            
     return
 
-def Fflaske():
-    FfDistance = 35
+def move_bottle(drive_for:int): # Renamed, sorry patrik, it had a shit name
+    """
+    Will go straight until, presumably, a bottle is within threshold, after which it will lift up the bottle and drive given distance
+    Input the driving distance after it has grabbed the bottle
+    """
+    distance_threshold = 35
+    counter = 0
+    last_reading = 0
+    slack_allowance = 1
+
     while True:
-        print("entered")
-        print(Ucensor.distance())
-        if Ucensor.distance() <= FfDistance:
+        current_reading = Ucensor.distance() 
+        print("The distance to presumed bottle" + str(Ucensor.distance()))
+        if  current_reading <= distance_threshold or counter >= 3:
             Motor_Grip.run(200)
             wait(4000)
             Motor_Grip.stop()
-            DBase.straight(250)
+            DBase.straight(drive_for)
             Motor_Grip.run(-200)
             wait(4000)
             Motor_Grip.stop()
             return
         else:
             DBase.straight(15)
-    return
 
-def lineup(angle:int):
-    correction = 0
-    distancethreshold = 500
-    while True:
-#        print(Gyrosensor.angle())
-#        if Gyrosensor.angle()==angle:
-#            return
-#        elif Gyrosensor.angle() < angle:
-#            DBase.turn(1)
-#        else:
-#            DBase.turn(-1)
-        print('The correction value is: ' + str(correction) + ' and the ultrasensor is: ' + str(Ucensor.distance()))
-        if Ucensor.distance() < distancethreshold:
-            if correction >= 10:
-                DBase.turn(-8)
-                return
-                
+            # Experimental, it has been very inconsistent with sensing the bottle, this should get a better feel for it
+            if current_reading <= last_reading + slack_allowance and current_reading >= last_reading - slack_allowance:
+                counter += 1 
+
+        last_reading = current_reading
+
+def lineup(angle:int = 0):
+    """
+    Depending on version it will attempt to lineup with a bottle or with a angle
+    """
+    # This is the ultrasonic scanner version
+    if True:
+        correction = 0
+        distancethreshold = 500
+        while True:
+            print('The correction value is: ' + str(correction) + ' and the ultrasensor is: ' + str(Ucensor.distance()))
+            if Ucensor.distance() < distancethreshold:
+                if correction >= 10:
+                    DBase.turn(-8)
+                    return
+                    
+            else:
+                DBase.turn(-1)
+            if Ucensor.distance() < distancethreshold:
+                correction += 1
+            else:
+                correction = 0
+            wait(5)
+    
+    # This is the gyroscopic version
+    if False:
+        print(Gyrosensor.angle())
+        if Gyrosensor.angle()==angle:
+            return
+        elif Gyrosensor.angle() < angle:
+            DBase.turn(1)
         else:
             DBase.turn(-1)
-        if Ucensor.distance() < distancethreshold:
-            correction += 1
-        else:
-            correction = 0
-        wait(5)
-
-
+    return
 
 # Setup
 target_val = calibrate()
 
 # First challagne
+# Are the wait statements neccesary, i dont feel like they are but idk
+# The if statements with hard coded bools in them may seem unnessecary, because they are, but they make it easy to change where the robot can be placed to start, so that it doesnt have to run the whole route to test one thing
 if True:
     follow_line(-1)
     wait(300)
     DBase.straight(-10)
     DBase.turn(30)
-    while Colorsensor.reflection() > 50: # Første sving
+
+    # First freespace
+    while Colorsensor.reflection() > 50: 
         DBase.drive(DRIVE_SPEED, 0)
+    
     follow_line(1)
     wait(300)
     DBase.straight(-10)
     DBase.turn(-30)
-    while Colorsensor.reflection() > 50: # Andet sving
+    
+    # Second freespace
+    while Colorsensor.reflection() > 50: 
         DBase.drive(DRIVE_SPEED, 0)
 
 # First turn 
 if True:
-    follow_line(-1, 'right')
+    follow_line(-1)
     wait(300)
 
-# Grab Bottle 1
+# Grab Bottle and move over line
 if True:
     DBase.straight(-300)
     lineup(-90)
     DBase.straight(250)
 
-    Fflaske()
+    move_bottle(250)
 
     DBase.straight(-500)
     DBase.turn(120)
