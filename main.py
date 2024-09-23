@@ -7,41 +7,65 @@ from pybricks.tools import wait, StopWatch, DataLog
 from pybricks.robotics import DriveBase
 from pybricks.media.ev3dev import SoundFile, ImageFile
 
+# Initiation of motors and sensors
 Motor_R = Motor(Port.B)
 Motor_L = Motor(Port.C)
 Motor_Grip = Motor(Port.D)
-EV3 = EV3Brick()
 Colorsensor = ColorSensor(Port.S1)
 Gyrosensor = GyroSensor(Port.S4)
 Ucensor = UltrasonicSensor(Port.S3)
 
-
-FfDistance = 35 
-Dspeed = -150
+# Initiation of various global variables 
+DRIVE_SPEED = -150
 GENERAL_TURN = 20
 GYRO_THRESHOLD = 20
+gyro_offset = 0
 
-Gyrosensor.reset_angle(0)
+# Initiation of functional classes
+EV3 = EV3Brick()
+DBase = DriveBase(Motor_R, Motor_L, wheel_diameter = 56, axle_track = 100)
 
-DBase=DriveBase(Motor_R, Motor_L, wheel_diameter=56, axle_track=100)
-
+# Creation and allocation of funtions
 def calibrate():
     """
-    Calibrates the value to determine where the edge of the line begins, to correct path
+    Calibrates the value, that determines where the edge of the line begins, to follow the correct path
+    And checks the gyro for drift to auto correct
     Returns target value of the edge as an int
     """
     EV3.speaker.beep()
     print("Starting calibration")
     gyro_early = Gyrosensor.angle()
+    
     wait(1000)
+    
     target_val = Colorsensor.reflection()
+    gyro_drift = abs(gyro_early - Gyrosensor.angle())
     
     EV3.speaker.beep()
-    print("Gyro driftet by: " + str(abs(gyro_early - Gyrosensor.angle())))
-    print("Calibration: ", target_val)
+    print("Gyro drift: " + str(gyro_drift))
+    print("Color sensor edge calibration value: ", target_val)
+    
+    # if gyro is not stable, try and fix it first, slightly taken from: https://pybricks.com/ev3-micropython/examples/gyro_boy.html
+    if gyro_drift != 0:
+        GYRO_CALIBRATION_LOOP_COUNT = 200
+        global gyro_offset
+        while True:
+            gyro_minimum_rate, gyro_maximum_rate = 440, -440
+            gyro_sum = 0
+            for _ in range(GYRO_CALIBRATION_LOOP_COUNT):
+                gyro_sensor_value = Gyrosensor.speed()
+                gyro_sum += gyro_sensor_value
+                if gyro_sensor_value > gyro_maximum_rate:
+                    gyro_maximum_rate = gyro_sensor_value
+                if gyro_sensor_value < gyro_minimum_rate:
+                    gyro_minimum_rate = gyro_sensor_value
+                wait(5)
+            if gyro_maximum_rate - gyro_minimum_rate < 2:
+                break
+        gyro_offset = gyro_sum / GYRO_CALIBRATION_LOOP_COUNT
     return target_val
     
-def follow_line(sign=1,turn_direction='straight'):
+def follow_line(sign=1, turn_direction='straight'):
     """ 
     Follows line edge
     Input defines which edge of the line to follow, where 1 (Default) is the right side and -1 is left side
@@ -52,7 +76,7 @@ def follow_line(sign=1,turn_direction='straight'):
     
     speed_multiplier = 1.15
     local_turn_rate = 45
-    local_drive_speed = Dspeed
+    local_drive_speed = DRIVE_SPEED
     while True:
         # Get new sensor data
         current_val = Colorsensor.reflection()
@@ -70,7 +94,7 @@ def follow_line(sign=1,turn_direction='straight'):
             local_drive_speed *= speed_multiplier
         else:
             #local_turn_rate = GENERAL_TURN
-            local_drive_speed = Dspeed
+            local_drive_speed = DRIVE_SPEED
             
         # Determine the amount of correction to stay on path
         if target_val > current_val:
@@ -80,9 +104,9 @@ def follow_line(sign=1,turn_direction='straight'):
             
         # Apply correction in drive module and which edge of the line to follow
         if current_val < target_val:
-            DBase.drive(Dspeed, -sign * (GENERAL_TURN + local_error)) # right
+            DBase.drive(DRIVE_SPEED, -sign * (GENERAL_TURN + local_error)) # right
         if current_val > target_val:
-            DBase.drive(Dspeed, sign * (GENERAL_TURN + local_error)) # left
+            DBase.drive(DRIVE_SPEED, sign * (GENERAL_TURN + local_error)) # left
     Gyrosensor.reset_angle(0)
             
         # Debug
@@ -91,6 +115,7 @@ def follow_line(sign=1,turn_direction='straight'):
     return
 
 def Fflaske():
+    FfDistance = 35
     while True:
         print("entered")
         print(Ucensor.distance())
@@ -144,13 +169,13 @@ if True:
     DBase.straight(-10)
     DBase.turn(30)
     while Colorsensor.reflection() > 50: # Første sving
-        DBase.drive(Dspeed, 0)
+        DBase.drive(DRIVE_SPEED, 0)
     follow_line(1)
     wait(300)
     DBase.straight(-10)
     DBase.turn(-30)
     while Colorsensor.reflection() > 50: # Andet sving
-        DBase.drive(Dspeed, 0)
+        DBase.drive(DRIVE_SPEED, 0)
 
 # First turn 
 if True:
