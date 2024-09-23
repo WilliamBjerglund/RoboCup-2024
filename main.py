@@ -17,8 +17,8 @@ Ucensor = UltrasonicSensor(Port.S3)
 
 
 FfDistance = 35 
-Dspeed = -180
-GENERAL_TURN = 18
+Dspeed = -150
+GENERAL_TURN = 20
 GYRO_THRESHOLD = 20
 
 Gyrosensor.reset_angle(0)
@@ -32,10 +32,12 @@ def calibrate():
     """
     EV3.speaker.beep()
     print("Starting calibration")
+    gyro_early = Gyrosensor.angle()
     wait(1000)
     target_val = Colorsensor.reflection()
-
+    
     EV3.speaker.beep()
+    print("Gyro driftet by: " + str(abs(gyro_early - Gyrosensor.angle())))
     print("Calibration: ", target_val)
     return target_val
     
@@ -107,6 +109,7 @@ def Fflaske():
 
 def lineup(angle:int):
     correction = 0
+    distancethreshold = 500
     while True:
 #        print(Gyrosensor.angle())
 #        if Gyrosensor.angle()==angle:
@@ -116,17 +119,18 @@ def lineup(angle:int):
 #        else:
 #            DBase.turn(-1)
         print('The correction value is: ' + str(correction) + ' and the ultrasensor is: ' + str(Ucensor.distance()))
-        if Ucensor.distance() < 1000:
-            if correction >= 5:
-                DBase.turn(-6)
+        if Ucensor.distance() < distancethreshold:
+            if correction >= 10:
+                DBase.turn(-8)
                 return
                 
         else:
             DBase.turn(-1)
-        if Ucensor.distance() < 1000:
+        if Ucensor.distance() < distancethreshold:
             correction += 1
         else:
             correction = 0
+        wait(5)
 
 
 
@@ -149,17 +153,26 @@ if True:
         DBase.drive(Dspeed, 0)
 
 # First turn 
-follow_line(1, 'right')
-wait(300)
+if True:
+    follow_line(-1, 'right')
+    wait(300)
 
 # Grab Bottle 1
-DBase.straight(-300)
-lineup(-90)
-DBase.straight(250)
+if True:
+    DBase.straight(-300)
+    lineup(-90)
+    DBase.straight(250)
 
-Fflaske()
+    Fflaske()
 
+    DBase.straight(-500)
+    DBase.turn(120)
 
-DBase.straight(-500)
-DBase.turn(120)
+# The vippen challenge
 follow_line(-1)
+
+print(Gyrosensor.angle())
+
+
+
+
