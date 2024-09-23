@@ -16,10 +16,12 @@ Gyrosensor = GyroSensor(Port.S4)
 Ucensor = UltrasonicSensor(Port.S3)
 
 
-FfDistance = 100
+FfDistance = 35 
 Dspeed = -180
 GENERAL_TURN = 18
 GYRO_THRESHOLD = 20
+
+Gyrosensor.reset_angle(0)
 
 DBase=DriveBase(Motor_R, Motor_L, wheel_diameter=56, axle_track=100)
 
@@ -32,6 +34,7 @@ def calibrate():
     print("Starting calibration")
     wait(1000)
     target_val = Colorsensor.reflection()
+
     EV3.speaker.beep()
     print("Calibration: ", target_val)
     return target_val
@@ -54,7 +57,7 @@ def follow_line(sign=1,turn_direction='straight'):
         gyro_angle = Gyrosensor.angle()
         # Determine if black line has been reached, and thus next stage
         if current_val < 30:
-            Gyrosensor.reset_angle(0)
+            #Gyrosensor.reset_angle(0)
             DBase.stop()
             break
         
@@ -75,19 +78,10 @@ def follow_line(sign=1,turn_direction='straight'):
             
         # Apply correction in drive module and which edge of the line to follow
         if current_val < target_val:
-            if turn_direction == 'right' and abs(gyro_angle) > GYRO_THRESHOLD:
-                print("number 1")
-                DBase.drive(Dspeed * speed_multiplier, -sign * (local_turn_rate + local_error)) # right
-            else:
-                print("number 2")
-                DBase.drive(Dspeed, -sign * (GENERAL_TURN + local_error)) # right
+            DBase.drive(Dspeed, -sign * (GENERAL_TURN + local_error)) # right
         if current_val > target_val:
-            if turn_direction == 'left' and abs(gyro_angle) > GYRO_THRESHOLD:
-                print("number 3")
-                DBase.drive(Dspeed * speed_multiplier, sign * (local_turn_rate + local_error)) # left
-            else:
-                print("number 4")
-                DBase.drive(Dspeed, sign * (GENERAL_TURN + local_error)) # left
+            DBase.drive(Dspeed, sign * (GENERAL_TURN + local_error)) # left
+    Gyrosensor.reset_angle(0)
             
         # Debug
         #print(current_val)
@@ -102,21 +96,45 @@ def Fflaske():
             Motor_Grip.run(200)
             wait(4000)
             Motor_Grip.stop()
-            DBase.straight(120)
+            DBase.straight(250)
             Motor_Grip.run(-200)
             wait(4000)
             Motor_Grip.stop()
-        if Ucensor.distance() > FfDistance:
-            print("exited")
-            break
+            return
+        else:
+            DBase.straight(15)
     return
+
+def lineup(angle:int):
+    correction = 0
+    while True:
+#        print(Gyrosensor.angle())
+#        if Gyrosensor.angle()==angle:
+#            return
+#        elif Gyrosensor.angle() < angle:
+#            DBase.turn(1)
+#        else:
+#            DBase.turn(-1)
+        print('The correction value is: ' + str(correction) + ' and the ultrasensor is: ' + str(Ucensor.distance()))
+        if Ucensor.distance() < 1000:
+            if correction >= 5:
+                DBase.turn(-6)
+                return
+                
+        else:
+            DBase.turn(-1)
+        if Ucensor.distance() < 1000:
+            correction += 1
+        else:
+            correction = 0
+
 
 
 # Setup
 target_val = calibrate()
 
 # First challagne
-if False:
+if True:
     follow_line(-1)
     wait(300)
     DBase.straight(-10)
@@ -131,15 +149,17 @@ if False:
         DBase.drive(Dspeed, 0)
 
 # First turn 
-follow_line(-1, 'right')
+follow_line(1, 'right')
 wait(300)
 
-# Grab Bottle
-DBase.straight(-255)
-DBase.turn(-120)
-DBase.straight(360)
+# Grab Bottle 1
+DBase.straight(-300)
+lineup(-90)
+DBase.straight(250)
 
 Fflaske()
 
 
 DBase.straight(-500)
+DBase.turn(120)
+follow_line(-1)
