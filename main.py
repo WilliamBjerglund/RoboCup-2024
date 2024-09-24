@@ -199,15 +199,16 @@ def lineup(angle:int = 0):
     # This is the gyroscopic version
     return
 def gyro_lineup(angle:int):
+    readings = []
+    bottle_seen = False
     while True:
-        gyro_angle = int(get_angle() + gyro_offset)
-        print("Its angle: " + str(gyro_angle) + " Target angle: " + str(angle))
-        if gyro_angle == angle:
-            return
-        elif gyro_angle < angle:
-            DBase.turn(1)
-        else:
-            DBase.turn(-1)
+        DBase.turn(-1)
+        current_reading = Ucensor.distance()
+        if current_reading < 2500:
+            bottle_seen = True
+
+
+
         
 
 # Setup
