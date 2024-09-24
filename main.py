@@ -10,10 +10,10 @@ from pybricks.media.ev3dev import SoundFile, ImageFile
 # Initiation of motors and sensors
 Motor_R = Motor(Port.B)
 Motor_L = Motor(Port.C)
-Motor_Grip = Motor(Port.D)
+#Motor_Grip = Motor(Port.D)
 Colorsensor = ColorSensor(Port.S1)
 Gyrosensor = GyroSensor(Port.S4)
-Ucensor = UltrasonicSensor(Port.S3)
+#Ucensor = UltrasonicSensor(Port.S3)
 
 # Initiation of various global variables 
 DRIVE_SPEED = -200
@@ -120,7 +120,7 @@ def follow_line(sign=1):
     Gyrosensor.reset_angle(0)            
     return
 
-def move_bottle(drive_for:int): # Renamed, sorry patrik, it had a shit name
+#def move_bottle(drive_for:int): # Renamed, sorry patrik, it had a shit name
     """
     Will go straight until, presumably, a bottle is within threshold, after which it will lift up the bottle and drive given distance
     Input the driving distance after it has grabbed the bottle
@@ -151,7 +151,7 @@ def move_bottle(drive_for:int): # Renamed, sorry patrik, it had a shit name
 
         last_reading = current_reading
 
-def lineup(angle:int = 0):
+#def lineup(angle:int = 0):
     """
     Depending on version it will attempt to lineup with a bottle or with a angle
     """
@@ -216,7 +216,7 @@ if True:
     wait(300)
 
 # Grab Bottle and move over line
-if True:
+if False:
     DBase.straight(-300)
     lineup(-90)
     DBase.straight(250)
@@ -229,7 +229,7 @@ if True:
 # The vippen challenge
 follow_line(-1)
 
-print(Gyrosensor.angle())
+
 
 
 
