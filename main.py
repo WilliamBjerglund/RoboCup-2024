@@ -22,6 +22,8 @@ GYRO_THRESHOLD = 20
 GYRO_OFFSET_FACTOR = 0.0005
 gyro_offset = 0
 robot_body_angle = 0
+my_stop_watch = StopWatch()
+timestamp = my_stop_watch.time()
 
 # Initiation of functional classes
 EV3 = EV3Brick()
@@ -66,8 +68,22 @@ def calibrate():
                 break
         gyro_offset = gyro_sum / GYRO_CALIBRATION_LOOP_COUNT
     return target_val
-    
-def follow_line(sign=1):
+
+def get_angle():
+    """
+    Very experimental, if it doesnt work, jsut kill it 
+    """
+    global gyro_offset, robot_body_angle, timestamp
+    timespan = timestamp - my_stop_watch.time()
+    timestamp = my_stop_watch.time()
+    gyro_sensor_value = Gyrosensor.speed()
+    gyro_offset *= (1 - GYRO_OFFSET_FACTOR)
+    gyro_offset += GYRO_OFFSET_FACTOR * gyro_sensor_value
+    robot_body_rate = gyro_sensor_value - gyro_offset
+    robot_body_angle += robot_body_rate * timespan
+    return robot_body_angle
+
+def follow_line(sign=1, time=0):
     """ 
     Follows the given or default line edge
     Input defines which edge of the line to follow, where 1 (Default) is the right side and -1 is left side
@@ -77,6 +93,8 @@ def follow_line(sign=1):
     if abs(sign) != 1:
         raise Exception("follow_line got to big input value: " + str(sign) + ", limit is between '1' or '-1'")
     
+    if time != 0:
+        stop_timer = StopWatch()
 
     correction_counter = 0
     correction_counter_max = 10
@@ -106,7 +124,8 @@ def follow_line(sign=1):
         # verify if this is not equivlant to above   
         #local_error = abs(target_val - current_val)/2
 
-        print("Corection counter is: " + str(correction_counter))
+        # Debg statement
+        #print("Corection counter is: " + str(correction_counter))
 
         # Apply correction in drive module and which edge of the line to follow
         turn_rate = GENERAL_TURN + local_error + correction_counter * correction_multiplier
@@ -115,9 +134,11 @@ def follow_line(sign=1):
         else:
             DBase.drive(DRIVE_SPEED, sign * turn_rate) # left
 
+        if time != 0:
+            # print("Time left in follow_line" + str(time - stop_timer.time()))
+            if stop_timer.time() > time:
+                return
 
-    # is it necesarry tho?
-    Gyrosensor.reset_angle(0)            
     return
 
 def move_bottle(drive_for:int): # Renamed, sorry patrik, it had a shit name
@@ -132,7 +153,7 @@ def move_bottle(drive_for:int): # Renamed, sorry patrik, it had a shit name
 
     while True:
         current_reading = Ucensor.distance() 
-        print("The distance to presumed bottle" + str(Ucensor.distance()))
+        print("The distance to presumed bottle: " + str(Ucensor.distance()))
         if  current_reading <= distance_threshold or counter >= 3:
             Motor_Grip.run(200)
             wait(4000)
@@ -158,12 +179,13 @@ def lineup(angle:int = 0):
     # This is the ultrasonic scanner version
     if True:
         correction = 0
-        distancethreshold = 500
+        distancethreshold = 410
+        DBase.turn(-70)        
         while True:
             print('The correction value is: ' + str(correction) + ' and the ultrasensor is: ' + str(Ucensor.distance()))
             if Ucensor.distance() < distancethreshold:
-                if correction >= 10:
-                    DBase.turn(-8)
+                if correction >= 20:
+                    DBase.turn(-32)
                     return
                     
             else:
@@ -175,15 +197,18 @@ def lineup(angle:int = 0):
             wait(5)
     
     # This is the gyroscopic version
-    if False:
-        print(Gyrosensor.angle())
-        if Gyrosensor.angle()==angle:
+    return
+def gyro_lineup(angle:int):
+    while True:
+        gyro_angle = int(get_angle() + gyro_offset)
+        print("Its angle: " + str(gyro_angle) + " Target angle: " + str(angle))
+        if gyro_angle == angle:
             return
-        elif Gyrosensor.angle() < angle:
+        elif gyro_angle < angle:
             DBase.turn(1)
         else:
             DBase.turn(-1)
-    return
+        
 
 # Setup
 target_val = calibrate()
@@ -217,7 +242,7 @@ if True:
 
 # Grab Bottle and move over line
 if True:
-    DBase.straight(-300)
+    DBase.straight(-280)
     lineup(-90)
     DBase.straight(250)
 
@@ -227,10 +252,41 @@ if True:
     DBase.turn(120)
 
 # The vippen challenge
-follow_line(-1)
+if True:
+    follow_line(-1)
+    DBase.straight(-280)
+    DBase.turn(-95)
 
-print(Gyrosensor.angle())
+    print("step 1, black line")
+    follow_line(-1)
+    wait(300)
+    print("step 3, hitting ramp")
+    DBase.straight(-100)
+    print("step 4, on ramp")
+    follow_line(-1)
+    wait(200)
+    #follow_line(-1)
+    print("step 5, off ramp")
+    DBase.straight(-560)
+    DBase.turn(115)
+
+    follow_line(-1, time=12000)
+    DBase.turn(190)
+    follow_line(1)
 
 
 
+    # Barcode challenge
+    wait(300)
+    DBase.turn(-50)
+    DBase.straight(-500)
 
+    follow_line()
+    wait(300)
+    # Bulls eye bottle 
+
+
+    follow_line()
+    #Rundt om flaske 1
+    DBase.turn(130)
+    follow_line(-1)
