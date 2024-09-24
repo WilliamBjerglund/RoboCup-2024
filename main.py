@@ -84,6 +84,7 @@ def follow_line(sign=1):
     while True:
         # Get new sensor data
         current_val = Colorsensor.reflection()
+        print(current_val)
 
         # Determine if black line has been reached, and thus next stage
         if current_val < 30:
@@ -106,7 +107,7 @@ def follow_line(sign=1):
         # verify if this is not equivlant to above   
         #local_error = abs(target_val - current_val)/2
 
-        print("Corection counter is: " + str(correction_counter))
+        #print("Corection counter is: " + str(correction_counter))
 
         # Apply correction in drive module and which edge of the line to follow
         turn_rate = GENERAL_TURN + local_error + correction_counter * correction_multiplier
@@ -191,11 +192,11 @@ target_val = calibrate()
 # First challagne
 # Are the wait statements neccesary, i dont feel like they are but idk
 # The if statements with hard coded bools in them may seem unnessecary, because they are, but they make it easy to change where the robot can be placed to start, so that it doesnt have to run the whole route to test one thing
-if True:
+if False:
     follow_line(-1)
     wait(300)
     DBase.straight(-10)
-    DBase.turn(30)
+    DBase.turn(50)
 
     # First freespace
     while Colorsensor.reflection() > 50: 
@@ -204,14 +205,14 @@ if True:
     follow_line(1)
     wait(300)
     DBase.straight(-10)
-    DBase.turn(-30)
+    DBase.turn(-40)
     
     # Second freespace
     while Colorsensor.reflection() > 50: 
         DBase.drive(DRIVE_SPEED, 0)
 
 # First turn 
-if True:
+if False:
     follow_line(-1)
     wait(300)
 
@@ -226,8 +227,32 @@ if False:
     DBase.straight(-500)
     DBase.turn(120)
 
+if True:
+    follow_line(-1)
 # The vippen challenge
-follow_line(-1)
+    follow_line(1)
+    follow_line(1)
+    wait(300)
+    #Turn efter vippe
+    EV3.speaker.beep()
+    DBase.turn(-20)
+    follow_line(1)
+
+    #Stregkode
+    wait(300)
+    DBase.turn(-50)
+    DBase.straight(-500)
+
+    follow_line()
+    wait(300)
+    #Cirkel flaske
+
+
+    follow_line()
+    #Rundt om flaske 1
+    DBase.turn(130)
+    follow_line(-1)
+
 
 
 
