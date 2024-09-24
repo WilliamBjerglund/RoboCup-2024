@@ -7,8 +7,6 @@ from pybricks.tools import wait, StopWatch, DataLog
 from pybricks.robotics import DriveBase
 from pybricks.media.ev3dev import SoundFile, ImageFile
 
-import datetime
-
 # Initiation of motors and sensors
 Motor_R = Motor(Port.B)
 Motor_L = Motor(Port.C)
@@ -18,13 +16,12 @@ Gyrosensor = GyroSensor(Port.S4)
 Ucensor = UltrasonicSensor(Port.S3)
 
 # Initiation of various global variables 
-DRIVE_SPEED = -150
-GENERAL_TURN = 20
+DRIVE_SPEED = -200
+GENERAL_TURN = 10
 GYRO_THRESHOLD = 20
 GYRO_OFFSET_FACTOR = 0.0005
 gyro_offset = 0
 robot_body_angle = 0
-timestamp = datetime.datetime.now()
 
 # Initiation of functional classes
 EV3 = EV3Brick()
@@ -70,20 +67,6 @@ def calibrate():
         gyro_offset = gyro_sum / GYRO_CALIBRATION_LOOP_COUNT
     return target_val
     
-def get_angle():
-    """
-    Very experimental, if it doesnt work, jsut kill it 
-    """
-    global gyro_offset, robot_body_angle, timestamp
-    timespan = timestamp - datetime.datetime.now()
-    timestamp = datetime.datetime.now() 
-    gyro_sensor_value = Gyrosensor.speed()
-    gyro_offset *= (1 - GYRO_OFFSET_FACTOR)
-    gyro_offset += GYRO_OFFSET_FACTOR * gyro_sensor_value
-    robot_body_rate = gyro_sensor_value - gyro_offset
-    robot_body_angle += robot_body_rate * timespan
-    return robot_body_angle
-
 def follow_line(sign=1):
     """ 
     Follows the given or default line edge
@@ -96,7 +79,7 @@ def follow_line(sign=1):
     
 
     correction_counter = 0
-    correction_counter_max = 1000
+    correction_counter_max = 10
     correction_multiplier = 3
     while True:
         # Get new sensor data
@@ -123,12 +106,15 @@ def follow_line(sign=1):
         # verify if this is not equivlant to above   
         #local_error = abs(target_val - current_val)/2
 
+        print("Corection counter is: " + str(correction_counter))
+
         # Apply correction in drive module and which edge of the line to follow
         turn_rate = GENERAL_TURN + local_error + correction_counter * correction_multiplier
         if current_val < target_val:
             DBase.drive(DRIVE_SPEED, -sign * turn_rate) # right
         else:
             DBase.drive(DRIVE_SPEED, sign * turn_rate) # left
+
 
     # is it necesarry tho?
     Gyrosensor.reset_angle(0)            
