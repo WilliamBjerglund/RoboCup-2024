@@ -50,7 +50,7 @@ def calibrate():
     print("Color sensor edge calibration value: ", target_val)
     
     # if gyro is not stable, try and fix it first, slightly taken from: https://pybricks.com/ev3-micropython/examples/gyro_boy.html
-    if gyro_drift != 0:
+    if False:
         GYRO_CALIBRATION_LOOP_COUNT = 200
         global gyro_offset
         while True:
@@ -154,7 +154,7 @@ def move_bottle(drive_for:int): # Renamed, sorry patrik, it had a shit name
     while True:
         current_reading = Ucensor.distance() 
         print("The distance to presumed bottle: " + str(Ucensor.distance()))
-        if  current_reading <= distance_threshold or counter >= 3:
+        if  current_reading <= distance_threshold or counter >= 5:
             Motor_Grip.run(200)
             wait(4000)
             Motor_Grip.stop()
@@ -169,6 +169,8 @@ def move_bottle(drive_for:int): # Renamed, sorry patrik, it had a shit name
             # Experimental, it has been very inconsistent with sensing the bottle, this should get a better feel for it
             if current_reading <= last_reading + slack_allowance and current_reading >= last_reading - slack_allowance:
                 counter += 1 
+            else:
+                counter == 0
 
         last_reading = current_reading
 
@@ -179,37 +181,24 @@ def lineup(angle:int = 0):
     # This is the ultrasonic scanner version
     if True:
         correction = 0
-        distancethreshold = 410
-        DBase.turn(-70)        
+        distancethreshold = 350
         while True:
-            print('The correction value is: ' + str(correction) + ' and the ultrasensor is: ' + str(Ucensor.distance()))
-            if Ucensor.distance() < distancethreshold:
+            reading = Ucensor.distance()
+            print('The correction value is: ' + str(correction) + ' and the ultrasensor is: ' + str(reading))
+            if reading < distancethreshold:
                 if correction >= 20:
-                    DBase.turn(-32)
+                    DBase.turn(25)
                     return
                     
             else:
-                DBase.turn(-1)
-            if Ucensor.distance() < distancethreshold:
+                DBase.turn(1)
+            
+            if reading < distancethreshold:
                 correction += 1
             else:
                 correction = 0
-            wait(5)
-    
-    # This is the gyroscopic version
-    return
-def gyro_lineup(angle:int):
-    readings = []
-    bottle_seen = False
-    while True:
-        DBase.turn(-1)
-        current_reading = Ucensor.distance()
-        if current_reading < 2500:
-            bottle_seen = True
-
-
-
-        
+            wait(10)
+            
 
 # Setup
 target_val = calibrate()
@@ -243,14 +232,16 @@ if True:
 
 # Grab Bottle and move over line
 if True:
-    DBase.straight(-280)
-    lineup(-90)
-    DBase.straight(250)
+    DBase.straight(-250) #worked val 
+    DBase.turn(-140)
+    DBase.straight(150)
+    lineup()
+#    DBase.straight(250)
 
     move_bottle(250)
 
     DBase.straight(-500)
-    DBase.turn(120)
+    DBase.turn(90)
 
 # The vippen challenge
 if True:
@@ -266,7 +257,6 @@ if True:
     print("step 4, on ramp")
     follow_line(-1)
     wait(200)
-    #follow_line(-1)
     print("step 5, off ramp")
     DBase.straight(-560)
     DBase.turn(115)
@@ -274,20 +264,38 @@ if True:
     follow_line(-1, time=12000)
     DBase.turn(190)
     follow_line(1)
-
-
-
-    # Barcode challenge
     wait(300)
-    DBase.turn(-50)
-    DBase.straight(-500)
 
+
+# Barcode challenge
+if True:
+    DBase.turn(-38)
+    DBase.straight(-300)
+
+    stamp = GENERAL_TURN
+    GENERAL_TURN = 10
     follow_line()
     wait(300)
+    GENERAL_TURN = stamp
+
+
     # Bulls eye bottle 
 
 
     follow_line()
     #Rundt om flaske 1
-    DBase.turn(130)
+    DBase.turn(60)
     follow_line(-1)
+
+
+# Black wall
+if True:
+    DBase.turn(-150)
+    counts = 0
+    while True:
+        if Ucensor.distance() <100:
+            counts+=1 
+        if counts>10:
+            break
+        DBase.straight(10)
+    DBase.turn(-45)
