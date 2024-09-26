@@ -12,18 +12,12 @@ Motor_R = Motor(Port.B)
 Motor_L = Motor(Port.C)
 Motor_Grip = Motor(Port.D)
 Colorsensor = ColorSensor(Port.S1)
-Gyrosensor = GyroSensor(Port.S4)
+
 Ucensor = UltrasonicSensor(Port.S3)
 
 # Initiation of various global variables 
 DRIVE_SPEED = -200
 GENERAL_TURN = 10
-GYRO_THRESHOLD = 20
-GYRO_OFFSET_FACTOR = 0.0005
-gyro_offset = 0
-robot_body_angle = 0
-my_stop_watch = StopWatch()
-timestamp = my_stop_watch.time()
 
 # Initiation of functional classes
 EV3 = EV3Brick()
@@ -38,50 +32,14 @@ def calibrate():
     """
     EV3.speaker.beep()
     print("Starting calibration")
-    gyro_early = Gyrosensor.angle()
     
     wait(1000)
     
     target_val = Colorsensor.reflection()
-    gyro_drift = abs(gyro_early - Gyrosensor.angle())
     
     EV3.speaker.beep()
-    print("Gyro drift: " + str(gyro_drift))
-    print("Color sensor edge calibration value: ", target_val)
-    
-    # if gyro is not stable, try and fix it first, slightly taken from: https://pybricks.com/ev3-micropython/examples/gyro_boy.html
-    if False:
-        GYRO_CALIBRATION_LOOP_COUNT = 200
-        global gyro_offset
-        while True:
-            gyro_minimum_rate, gyro_maximum_rate = 440, -440
-            gyro_sum = 0
-            for _ in range(GYRO_CALIBRATION_LOOP_COUNT):
-                gyro_sensor_value = Gyrosensor.speed()
-                gyro_sum += gyro_sensor_value
-                if gyro_sensor_value > gyro_maximum_rate:
-                    gyro_maximum_rate = gyro_sensor_value
-                if gyro_sensor_value < gyro_minimum_rate:
-                    gyro_minimum_rate = gyro_sensor_value
-                wait(5)
-            if gyro_maximum_rate - gyro_minimum_rate < 2:
-                break
-        gyro_offset = gyro_sum / GYRO_CALIBRATION_LOOP_COUNT
+    print("Color sensor edge calibration value: ", target_val)    
     return target_val
-
-def get_angle():
-    """
-    Very experimental, if it doesnt work, jsut kill it 
-    """
-    global gyro_offset, robot_body_angle, timestamp
-    timespan = timestamp - my_stop_watch.time()
-    timestamp = my_stop_watch.time()
-    gyro_sensor_value = Gyrosensor.speed()
-    gyro_offset *= (1 - GYRO_OFFSET_FACTOR)
-    gyro_offset += GYRO_OFFSET_FACTOR * gyro_sensor_value
-    robot_body_rate = gyro_sensor_value - gyro_offset
-    robot_body_angle += robot_body_rate * timespan
-    return robot_body_angle
 
 def follow_line(sign=1, time=0):
     """ 
@@ -270,21 +228,29 @@ if True:
 # Barcode challenge
 if True:
     DBase.turn(-38)
-    DBase.straight(-300)
+    DBase.straight(-280)
+    DBase.turn(38)
 
-    stamp = GENERAL_TURN
-    GENERAL_TURN = 10
-    follow_line()
+    #stamp = GENERAL_TURN
+    #GENERAL_TURN = 10
+    print("Time it now, you unit testing asshole")
+    follow_line(-1, time=800)
     wait(300)
-    GENERAL_TURN = stamp
+    DBase.turn(-25)
+    follow_line(1)
+    #GENERAL_TURN = stamp
 
 
     # Bulls eye bottle 
 
 
     follow_line()
+
+
     #Rundt om flaske 1
     DBase.turn(60)
+    follow_line(-1, time=800)
+    DBase.turn(-20)
     follow_line(-1)
 
 
