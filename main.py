@@ -12,7 +12,6 @@ Motor_R = Motor(Port.B)
 Motor_L = Motor(Port.C)
 Motor_Grip = Motor(Port.D)
 Colorsensor = ColorSensor(Port.S1)
-
 Ucensor = UltrasonicSensor(Port.S3)
 
 # Initiation of various global variables 
@@ -41,7 +40,7 @@ def calibrate():
     print("Color sensor edge calibration value: ", target_val)    
     return target_val
 
-def follow_line(sign=1, time=0):
+def follow_line(sign=1, time=0, precision=0):
     """ 
     Follows the given or default line edge
     Input defines which edge of the line to follow, where 1 (Default) is the right side and -1 is left side
@@ -87,10 +86,16 @@ def follow_line(sign=1, time=0):
 
         # Apply correction in drive module and which edge of the line to follow
         turn_rate = GENERAL_TURN + local_error + correction_counter * correction_multiplier
+        drive_speed = DRIVE_SPEED
+
+        if precision != 0:
+            turn_rate = local_error * 0.8 
+            drive_speed = -50
+
         if current_val < target_val:
-            DBase.drive(DRIVE_SPEED, -sign * turn_rate) # right
+            DBase.drive(drive_speed, -sign * turn_rate) # right
         else:
-            DBase.drive(DRIVE_SPEED, sign * turn_rate) # left
+            DBase.drive(drive_speed, sign * turn_rate) # left
 
         if time != 0:
             # print("Time left in follow_line" + str(time - stop_timer.time()))
@@ -108,11 +113,13 @@ def move_bottle(drive_for:int): # Renamed, sorry patrik, it had a shit name
     counter = 0
     last_reading = 0
     slack_allowance = 1
+    counter_clocks = 0
 
     while True:
         current_reading = Ucensor.distance() 
         print("The distance to presumed bottle: " + str(Ucensor.distance()))
-        if  current_reading <= distance_threshold or counter >= 5:
+        if  current_reading <= distance_threshold or counter >= 5 or counter_clocks >= 18:
+            DBase.straight(10)
             Motor_Grip.run(200)
             wait(4000)
             Motor_Grip.stop()
@@ -131,6 +138,7 @@ def move_bottle(drive_for:int): # Renamed, sorry patrik, it had a shit name
                 counter == 0
 
         last_reading = current_reading
+        counter_clocks += 1
 
 def lineup(angle:int = 0):
     """
@@ -139,13 +147,13 @@ def lineup(angle:int = 0):
     # This is the ultrasonic scanner version
     if True:
         correction = 0
-        distancethreshold = 350
+        distancethreshold = 450
         while True:
             reading = Ucensor.distance()
             print('The correction value is: ' + str(correction) + ' and the ultrasensor is: ' + str(reading))
             if reading < distancethreshold:
                 if correction >= 20:
-                    DBase.turn(25)
+                    DBase.turn(15)
                     return
                     
             else:
@@ -160,6 +168,10 @@ def lineup(angle:int = 0):
 
 # Setup
 target_val = calibrate()
+current_settings = DBase.settings()
+DBase.settings(current_settings[0] + 50, current_settings[1], current_settings[2], current_settings[3])
+start_time_watch = StopWatch()
+start_time = start_time_watch.time()
 
 # First challagne
 # Are the wait statements neccesary, i dont feel like they are but idk
@@ -168,7 +180,7 @@ if True:
     follow_line(-1)
     wait(300)
     DBase.straight(-10)
-    DBase.turn(30)
+    DBase.turn(40)
 
     # First freespace
     while Colorsensor.reflection() > 50: 
@@ -184,15 +196,14 @@ if True:
         DBase.drive(DRIVE_SPEED, 0)
 
 # First turn 
-if True:
     follow_line(-1)
     wait(300)
 
 # Grab Bottle and move over line
 if True:
-    DBase.straight(-250) #worked val 
+    DBase.straight(-250) 
     DBase.turn(-140)
-    DBase.straight(150)
+    #DBase.straight(150)
     lineup()
 #    DBase.straight(250)
 
@@ -221,55 +232,71 @@ if True:
 
     follow_line(-1, time=12000)
     DBase.turn(190)
-    follow_line(1)
-    wait(300)
-
 
 # Barcode challenge
 if True:
-    DBase.turn(-38)
-    DBase.straight(-280)
-    DBase.turn(38)
-
-    #stamp = GENERAL_TURN
-    #GENERAL_TURN = 10
-    print("Time it now, you unit testing asshole")
-    follow_line(-1, time=800)
-    wait(300)
-    DBase.turn(-25)
     follow_line(1)
-    #GENERAL_TURN = stamp
+    wait(300)
+
+    DBase.turn(-38)
+    DBase.straight(-340)
+    DBase.turn(28)
+
+    #DBase.turn(-25)
+    follow_line(1)
 
 
     # Bulls eye bottle 
 
-
+    wait(300)
     follow_line()
 
 
     #Rundt om flaske 1
     DBase.turn(60)
-    follow_line(-1, time=800)
+    follow_line(-1, time=2700)
+    wait(300)
     DBase.turn(-20)
-    follow_line(-1)
+    follow_line(-1, time=8500)
 
-
-# Black wall
+# Black wall v2
 if True:
-    DBase.turn(-190)
-    counts = 0
-    while True:
-        if Ucensor.distance() <100:
-            counts+=1 
-        if counts>10:
-            break
-        DBase.straight(10)
-    DBase.turn(-45)
-    counts = 0
-    while True:
-        if Ucensor.distance() <100:
-            counts+=1 
-        if counts>10:
-            break
-        DBase.straight(10)
-    DBase.turn(45)
+    follow_line(-1, precision=1)
+    DBase.straight(-550)
+    DBase.turn(-55)
+    
+    DBase.drive(-200, 45)
+    wait(2200)
+    DBase.stop()
+
+    DBase.straight(-250)
+    DBase.turn(-25)
+
+if True:
+    #Rundt om flaske 2
+    follow_line(-1)
+    DBase.straight(-100)
+    DBase.turn(-60)
+    DBase.straight(-150)
+
+    # Turn
+    DBase.drive(-200, 30)
+    wait(2400)
+    DBase.stop()
+    wait(300)
+    
+    DBase.turn(50)
+    DBase.straight(-160)
+    DBase.turn(-55)
+    follow_line(1)
+
+    #Landings bane
+    DBase.straight(-200)
+    follow_line(1, time=7900)
+
+    DBase.turn(-100)
+    DBase.straight(-100)
+    DBase.turn(100)
+
+
+print("It took " + str(start_time_watch.time() - start_time) + "ms")
