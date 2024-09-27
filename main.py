@@ -256,7 +256,7 @@ if True:
 
 # Black wall
 if True:
-    DBase.turn(-150)
+    DBase.turn(-190)
     counts = 0
     while True:
         if Ucensor.distance() <100:
@@ -265,3 +265,11 @@ if True:
             break
         DBase.straight(10)
     DBase.turn(-45)
+    counts = 0
+    while True:
+        if Ucensor.distance() <100:
+            counts+=1 
+        if counts>10:
+            break
+        DBase.straight(10)
+    DBase.turn(45)
