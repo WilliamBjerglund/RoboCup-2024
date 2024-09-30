@@ -120,14 +120,15 @@ def move_bottle(drive_for:int, bullseye=False): # Renamed, sorry patrik, it had 
         print("The distance to presumed bottle: " + str(Ucensor.distance()))
         #if  current_reading <= distance_threshold or counter >= 3 or counter_clocks >= 5:
         if True: # it has ben changed as the new lineup is better, it therefore is hard coded to just pickup, hence it doesnt need to creep up
-            DBase.straight(7)
+            #DBase.straight(7)
             Motor_Grip.run(200)
             wait(4000)
             Motor_Grip.stop()
             DBase.straight(drive_for)
 
             if bullseye:
-                DBase.turn(-10)
+                DBase.turn(-20)
+                DBase.straight(50)
             
             Motor_Grip.run(-200)
             wait(4000)
@@ -191,11 +192,11 @@ def printnice(main='', secondary='', do_time=False):
     """
     if do_time:
         print("Time progress: " + str((start_time_watch.time() - start_time)/60000) + "min")
+        print()
     if main != '':
         print('-'*5 + main + '-'*5)
     if secondary != '':
         print('-' + secondary + '-')        
-    print()
     return
 
 # Setup
@@ -247,8 +248,9 @@ if True:
 
     print("-Acutally lining up")
     scanning_lineup()
-    DBase.straight(235)
 
+    print("-Goingforward and grabbing bottle")
+    DBase.straight(235)
     move_bottle(250)
 
     DBase.straight(-500)
@@ -276,54 +278,64 @@ if True:
     DBase.turn(190)
 
 # Barcode challenge
-if True:
     follow_line(1)
     wait(300)
 
     DBase.turn(-38)
     DBase.straight(-330)
     DBase.turn(32)
-
+    
     # Bulls eye bottle 
 if True:
+    printnice(main="Bulls eye", do_time=True)
     follow_line(1)
 
+    printnice(secondary="Lining up to the center") 
     DBase.straight(-300)
     DBase.turn(-100)
     follow_line(-1, precision=199)
-
     DBase.straight(-800)
-    DBase.turn(205) # bigger goes to the right
-    DBase.straight(317)
+
+    printnice(secondary="Rotates to the bottle and goes for it")
+#    DBase.turn(205) # bigger goes to the right
+
+    DBase.turn(170)
+    scanning_lineup()
+    DBase.turn(-5)
+
+    printnice(secondary="Picking up bottle and placing")
+    DBase.straight(330)
     move_bottle(-570, True)
 
-    DBase.drive(-200, 50)
-    wait(1000)
-    while Colorsensor.reflection() > 50:
-        DBase.drive(-200, 20)
-    
-    DBase.straight(-150)
-    DBase.turn(-90)
-    follow_line(1)
+    printnice(secondary="Returning to track")
+    #follow_line(1, precision=1, time=1500)
 
+    DBase.straight(-100)
+    DBase.turn(70)
+    DBase.straight(-300)
+
+    follow_line(1, time=4000)
+    DBase.turn(-110)
+
+    printnice(secondary="Back on track")
     wait(300)
-    follow_line()
+
 
     #Rundt om flaske 1
+if True:
+    printnice(main="Rundt om flasken", do_time=True)
+    
+    follow_line(1)
+    DBase.straight(-100)
     DBase.turn(60)
-    follow_line(-1, time=2700)
-    wait(300)
-    DBase.turn(-20)
+    DBase.straight(-1300)
+    DBase.turn(140)
 
-    DBase.turn(60)
-    DBase.drive(200, -30)
-    while Colorsensor.reflection() > 50:
-        print()
-
-    follow_line(-1, time=8500)
+    #follow_line(-1, time=8500)
+    follow_line(-1, time=1200)
+    DBase.turn(20)
 
 # Black wall v2
-if True:
     follow_line(-1, precision=1)
     DBase.straight(-550)
     DBase.turn(-55)
