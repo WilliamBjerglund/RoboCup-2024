@@ -6,6 +6,7 @@ from pybricks.parameters import Port, Stop, Direction, Button, Color
 from pybricks.tools import wait, StopWatch, DataLog
 from pybricks.robotics import DriveBase
 from pybricks.media.ev3dev import SoundFile, ImageFile
+import threading
 
 # Initiation of motors and sensors
 Motor_R = Motor(Port.B)
@@ -103,6 +104,17 @@ def follow_line(sign=1, time=0, precision=0):
                 return
 
     return
+def arm_control(mode:str):
+    if mode == 'open':
+        Motor_Grip.run(-200)
+    elif mode == 'close':
+        Motor_Grip.run(200)
+    else:
+        raise Exception("arm_control was given invalid argument and failed. \nInvalid argument: " + mode)
+    
+    wait(4000)
+    Motor_Grip.stop()
+    return
 
 def move_bottle(drive_for:int, bullseye=False): # Renamed, sorry patrik, it had a shit name
     """
@@ -120,19 +132,15 @@ def move_bottle(drive_for:int, bullseye=False): # Renamed, sorry patrik, it had 
         print("The distance to presumed bottle: " + str(Ucensor.distance()))
         #if  current_reading <= distance_threshold or counter >= 3 or counter_clocks >= 5:
         if True: # it has ben changed as the new lineup is better, it therefore is hard coded to just pickup, hence it doesnt need to creep up
-            #DBase.straight(7)
-            Motor_Grip.run(200)
-            wait(4000)
-            Motor_Grip.stop()
+            arm_control('close')
             DBase.straight(drive_for)
-
+            
             if bullseye:
                 DBase.turn(-20)
                 DBase.straight(50)
             
-            Motor_Grip.run(-200)
-            wait(4000)
-            Motor_Grip.stop()
+            arm_control('open')
+
             return
         else:
             DBase.straight(15)
@@ -145,7 +153,7 @@ def move_bottle(drive_for:int, bullseye=False): # Renamed, sorry patrik, it had 
 
         last_reading = current_reading
         counter_clocks += 1
-            
+
 def scanning_lineup():
     """
     Will lineup with a given object infront of its ultrasonic sensor, does not work if there isn't a relatively tall object infront
@@ -207,6 +215,9 @@ DBase.settings(current_settings[0] + 50, current_settings[1], current_settings[2
 
 start_time_watch = StopWatch()
 start_time = start_time_watch.time()
+
+t_open_arm = threading.Thread(target=arm_control, args=['open'])
+t_close_arm = threading.Thread(target=arm_control, args=['close'])
 
 # First challagne
 # Are the wait statements neccesary, i dont feel like they are but idk
@@ -304,15 +315,15 @@ if True:
     DBase.turn(-5)
 
     printnice(secondary="Picking up bottle and placing")
-    DBase.straight(330)
+    DBase.straight(315)
     move_bottle(-570, True)
 
     printnice(secondary="Returning to track")
-    #follow_line(1, precision=1, time=1500)
-
     DBase.straight(-100)
     DBase.turn(70)
     DBase.straight(-300)
+
+    t_close_arm.start()
 
     follow_line(1, time=4000)
     DBase.turn(-110)
@@ -331,7 +342,6 @@ if True:
     DBase.straight(-1300)
     DBase.turn(140)
 
-    #follow_line(-1, time=8500)
     follow_line(-1, time=1200)
     DBase.turn(20)
 
@@ -353,6 +363,8 @@ if True:
     DBase.straight(-100)
     DBase.turn(-60)
     DBase.straight(-150)
+
+    t_open_arm.start()
 
     # Turn
     DBase.drive(-200, 30)
