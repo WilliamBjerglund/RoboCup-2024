@@ -23,6 +23,12 @@ GENERAL_TURN = 10
 EV3 = EV3Brick()
 DBase = DriveBase(Motor_R, Motor_L, wheel_diameter = 56, axle_track = 100)
 
+def play_music():
+    EV3.speaker.set_volume(1000, which='_all_')
+    EV3.speaker.play_file("batman 1.4.wav")
+    #EV3.speaker.play_file("Life.wav")
+
+
 # Creation and allocation of funtions
 def calibrate():
     """
@@ -218,6 +224,9 @@ start_time = start_time_watch.time()
 
 t_open_arm = threading.Thread(target=arm_control, args=['open'])
 t_close_arm = threading.Thread(target=arm_control, args=['close'])
+
+t_play_music = threading.Thread(target=play_music)
+t_play_music.start()
 
 # First challagne
 # Are the wait statements neccesary, i dont feel like they are but idk
