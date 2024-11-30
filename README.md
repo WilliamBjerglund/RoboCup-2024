@@ -1,9 +1,9 @@
 
 # RoboCup E24 (Design of Lego Mindstorm Robot) AAU
 
-This project is part of Computer Engineering 1. Semester at AAU, it is about teaching us the basics of code and getting us to make simple code do trickly things with hardware.
+This project was undertaken as part of the 1st semester in Computer Engineering at AAU. Its primary aim was to introduce us to the fundamentals of programming and challenge us to create simple code capable of performing complex tasks involving hardware.
 
-The project Involved us Designing a Lego Mindstorm Robot, we then had to Follow a Line, and execute certain Challenges along the way, such as picking up Flasks, moving Flasks, Going over Tilting ramps and navigating through a Wall without any lines or ground objects to help the robot but merely using visual sensors like ultrasound and touch.
+For this project, we designed and built a LEGO Mindstorms robot. Our task was to program the robot to follow a line and complete a series of challenges, such as picking up and moving flasks, navigating over tilting ramps, and maneuvering through a wall without relying on lines or ground markers. Instead, the robot relied solely on visual sensors, such as ultrasonic and touch sensors, to navigate its environment.
 
 
 
