@@ -8,5 +8,5 @@ The project Involved us Designing a Lego Mindstorm Robot, we then had to Follow 
 
 
 
-![Logo]([https://dev-to-uploads.s3.amazonaws.com/uploads/articles/th5xamgrr6se0x5ro4g6.png](https://github.com/WilliamBjerglund/RoboCup-2024/blob/v6/AAULogo.png?raw=true))
+![Logo](https://github.com/WilliamBjerglund/RoboCup-2024/blob/v6/AAULogo.png?raw=true)
 
